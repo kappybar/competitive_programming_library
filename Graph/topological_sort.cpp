@@ -1,51 +1,52 @@
 #include <bits/stdc++.h>
+#define rep(i,n) for(int i=0;i<(int)(n);i++)
+#define chmin(x,y) x = min((x),(y));
+#define chmax(x,y) x = max((x),(y));
 using namespace std;
-typedef long long ll;
-typedef pair<int,int> pp;
+using ll = long long ;
+using P = pair<int,int> ;
+using pll = pair<long long,long long>;
 const int INF = 1e9;
+const long long LINF = 1e17;
 const int MOD = 1000000007;
-#define rep(i,n) for(int i=0;i<n;i++)
+//const int MOD = 998244353;
+const double PI = 3.14159265358979323846;
 
-int MX = 100005;
-vector<int> parents(MX);
-vector<int> in(MX);
-vector<vector<int>> tree(MX,vector<int>());
-  
-int main() {
-  int n,m;
-  cin >> n >> m;
-  rep(i,n-1+m){
-    int a,b;
-    cin >> a >> b;
-    --a; --b;
-    tree.at(a).push_back(b);
-    in.at(b) ++;
-  }
-  int parent = 0;
-  rep(i,n){
-    if(in.at(i) == 0){
-      parent = i;
-      break;
+vector<int> ToplogicalSort(vector<vector<int>> &G,vector<int> &Indegree){
+    int n = (int)G.size();
+    vector<int> res(n);
+    queue<int> q;
+    for(int i=0;i<n;i++){
+        if(Indegree[i] == 0){
+            q.push(i);
+        }
     }
-  }
-  parents.at(parent) = -1;
-  queue<int> q;
-  q.push(parent);
-  while(!q.empty()){
-    int now = q.front();
-    q.pop();
-    for(auto i:tree.at(now)){
-      in.at(i) --;
-      if(in.at(i) == 0){
-        parents.at(i) = now;
-        q.push(i);
-      }
+    int i = 0;
+    while(!q.empty()){
+        int now = q.front();
+        res[i++] = now;
+        q.pop();
+        for(int v:G[now]){
+            --Indegree[v];
+            if(Indegree[v] == 0) q.push(v);
+        }
     }
-  }
-
-  rep(i,n) cout << parents.at(i)+1 << endl;
-
-  return 0;
+    if(i==n) return res;
+    else return {-1};
 }
-/*完全ではないかもしれないなぜならこれはトポロジカルソートそのものの問題ではないから*/
 
+int main(){
+    int v,e;
+    cin >> v >> e;
+    vector<vector<int>> G(v);
+    vector<int> in(v,0);
+    rep(i,e){
+        int s,t;
+        cin >> s >> t;
+        G[s].push_back(t);
+        ++in[t];
+    }
+    vector<int> res = ToplogicalSort(G,in);
+    rep(i,v) cout << res[i] << endl;
+    return 0;
+}

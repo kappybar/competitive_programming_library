@@ -1,162 +1,154 @@
-#include <bits/stdc++.h>
-#define rep(i,n) for(int i=0;i<(int)(n);i++)
-using namespace std;
-using ll = long long ;
-using P = pair<int,int> ;
-using pll = pair<long long,long long>;
-constexpr int INF = 1e9;
-constexpr long long LINF = 1e17;
-constexpr int MOD = 1000000007;
-constexpr double PI = 3.14159265358979323846;
+#include<stdio.h>
+#include<stdlib.h>
 
-vector<int> induced_sort(vector<int> s,int alphabet_size=26){
-    int n = (int)s.size();
-    if(n==1){
-        vector<int> res(1,0);
-        return res;
+char s[1000005];
+int s_[1000005];
+int ans[1000005];
+int lcp[1000005];
+//S:0
+//L:1
+
+// n: strとresのサイズ
+// res:　結果の配列
+// resは全部0で渡してくれればいい
+// str: 文字列の数字表記
+// LMS_size: LMSのサイズ
+// LMS: LMSのindex
+// T: T[i] = 0(S),1(L)
+// char_size: alphabet_size
+void induced_sort(int n,int *res,int *str,int LMS_size,int *LMS,int *T,int char_size){
+    int *ed = (int *)calloc(char_size+1,sizeof(int)); // それぞれの文字のバケツの後端
+    int *st = (int *)calloc(char_size+1,sizeof(int)); //　それぞれの文字のバケツの前端
+    if(ed == NULL || st == NULL){ res[0] = -1; return;} // 失敗
+    for(int i=0;i<n;i++) ed[str[i]+1] ++;
+    for(int i=1;i<=char_size;i++) ed[i] += ed[i-1];
+    for(int i=1;i<=char_size;i++) st[i] = ed[i-1];//[st,ed)
+
+    int *idx = (int *)calloc(char_size+1,sizeof(int)); // 今のindex
+    if(idx == NULL) {res[0] = -1; return; } //失敗
+    for(int i=0;i<=char_size;i++) idx[i] = ed[i];
+
+    for(int i=LMS_size-1;i>=0;i--){
+        int c = str[LMS[i]];
+        res[--idx[c+1]] = LMS[i]; //LMSは後ろから詰める
     }
-    s.push_back(0); // dummy char
-
-    vector<int> cnt(alphabet_size+1,0); // the number of alphabet size
-    cnt[0] = 1; // dummy char
-    vector<int> t(n+1); // L:1 S:0
-    t[n] = 0;
-    for(int i=n-1;i>=0;i--){
-        if(s[i] < s[i+1]) t[i] = 0;
-        else if(s[i] > s[i+1]) t[i] = 1;
-        else t[i] = t[i+1];
-        cnt[s[i]] ++;
+    for(int i=0;i<=char_size;i++) idx[i] = st[i];
+    for(int i=0;i<n;i++){// Lを前から詰める
+        if(res[i] == 0 || T[res[i]-1] == 0) continue; // 一個前がSだったらダメ
+        int c = str[res[i]-1];
+        res[idx[c+1]++] = res[i]-1;
     }
-    vector<int> sa(n+1,-1),st(alphabet_size+1,0),ed(alphabet_size+1,0),current_idx(alphabet_size+1,0);
+    for(int i=0;i<=char_size;i++) idx[i] = ed[i];
+    for(int i=n-1;i>=0;i--){// Sを後ろから詰める
+        if(res[i] == 0 || T[res[i]-1] == 1) continue; // 一個前がLだったらダメ
+        int c = str[res[i]-1];
+        res[--idx[c+1]] = res[i]-1;
+    }
+    free(st);
+    free(ed);
+    free(idx);
+    return;
+}
 
-    for(int i=0;i<=alphabet_size;i++) ed[i] = cnt[i];
-    for(int i=0;i<alphabet_size;i++) ed[i+1] += ed[i];
-    for(int i=1;i<=alphabet_size;i++) st[i] = ed[i-1];
-    for(int i=0;i<=alphabet_size;i++) current_idx[i] = ed[i];
-    
-    vector<int> lms(n+1,0); // lms:1
-    vector<int> lms_index; // lms index
-    for(int i=1;i<=n;i++){ // lms index -> insert
-        if(t[i] == 0 && t[i-1] == 1){
-            lms[i] = 1;
-            lms_index.push_back(i);
-            int now_alphabet = s[i];
-            sa[--current_idx[now_alphabet]] = i;
+// n: resとstrのサイズ
+// res:結果
+// str:文字列の数値化
+// char_size: alphabet_size
+void sa_is(int n,int *res,int *str,int char_size){
+    int *T = (int *)calloc(n,sizeof(int)); // T: T[i] = 0(S),1(L)
+    int *LMS = (int *)calloc(n,sizeof(int)); // LMS index
+    int *LMS_ = (int *)calloc(n,sizeof(int)); // LMS_[i] 1 if i index LMS, 0 not
+    if(T == NULL || LMS == NULL || LMS_ == NULL){ res[0] = -1; return;}
+    int LMS_size = 0;
+
+    for(int i=n-2;i>=0;i--){
+        if(str[i] < str[i+1]) T[i] = 0; // S
+        else if(str[i] > str[i+1]) T[i] = 1;// L
+        else T[i] = T[i+1];
+    }
+
+    for(int i=0;i<n;i++){
+        if(T[i] == 0 && (i==0 || T[i-1] == 1)){
+            LMS[LMS_size++] = i;
+            LMS_[i] = 1;
         }
     }
 
-    for(int i=0;i<=alphabet_size;i++) current_idx[i] = st[i];
-    for(int i=0;i<=n;i++){
-        if(sa[i] == -1 || sa[i] == 0) continue;
-        if(t[sa[i] - 1] == 1){
-            int now_alphabet = s[sa[i]-1];
-            sa[current_idx[now_alphabet]++] = sa[i]-1;
-        }
+    int *pre_sa = (int *)calloc(n,sizeof(int));
+    if(pre_sa == NULL) {res[0] = -1; return;}
+    induced_sort(n,pre_sa,str,LMS_size,LMS,T,char_size);
+    if(pre_sa[0]==-1) {res[0] = -1; return;}
+
+    int *orderedLMS = (int *)calloc(LMS_size,sizeof(int));
+    if(orderedLMS == NULL){res[0] = -1; return;}
+    int index = 0;
+    for(int i=0;i<n;i++){
+        if(LMS_[pre_sa[i]] == 1) orderedLMS[index++] = pre_sa[i];
     }
 
-    for(int i=0;i<=alphabet_size;i++) current_idx[i] = ed[i];
-    for(int i=n;i>=0;i--){
-        if(sa[i] == -1 || sa[i] == 0) continue;
-        if(t[sa[i]-1] == 0){
-            int now_alphabet = s[sa[i]-1];
-            sa[--current_idx[now_alphabet]] = sa[i]-1;
-        }
-    }
-
-
-    int cnt_ = 0;
-    int order = 0;
-    vector<int> now;
-    vector<int> lms_(n+1,0);
-    for(int i=0;i<=n;i++){
-        if(lms[sa[i]] == 1){
-            ++cnt_;
-            int id_ = sa[i];
-            vector<int> now_ = {s[id_++]};
-            while(id_ <= n && lms[id_] == 0){
-                now_.push_back(s[id_++]);
+    pre_sa[orderedLMS[0]] = 0;
+    int rank = 0;
+    for(int i=0;i<LMS_size-1;i++){
+        int diff = 0;// diff false
+        int j = 0;
+        int s = orderedLMS[i];
+        int t = orderedLMS[i+1];
+        while(s+j < n && t+j < n){
+            if(str[s+j] != str[t+j] || LMS_[s+j] != LMS_[t+j]){
+                diff = 1;
+                break;
             }
-            if(id_<=n) now_.push_back(s[id_]);
-
-            if(now == now_){
-                lms_[sa[i]] = order;
-            }else{
-                lms_[sa[i]] = ++order;
-                swap(now,now_);
-            }
+            if(j>0 && LMS_[s+j]) break;
+            ++j;
         }
+        if(diff == 1) pre_sa[orderedLMS[i+1]] = ++rank;
+        else pre_sa[orderedLMS[i+1]] = rank;
     }
 
-    vector<int> rec_sa;
-    for(int i=0;i<=n;i++){
-        if(lms_[i] > 0){
-            rec_sa.push_back(lms_[i]);
-        }
+    int* new_str = (int *)calloc(LMS_size+1,sizeof(int));
+    if(new_str == NULL) {res[0] = -1; return;}
+    index = 0;
+    for(int i=0;i<n;i++){
+        if(LMS_[i] == 1) new_str[index++] = pre_sa[i]+1;
     }
-    vector<int> lms_suffix_array;
+    free(LMS_);
+    free(pre_sa);
 
-    if(order == cnt_){
-        lms_suffix_array.resize(order);
-        int c = 0;
-        for(int i=0;i<=n;i++){
-            if(lms[sa[i]] == 1){
-                lms_suffix_array[c++] = sa[i];
-            }
-        }
+    int *new_sa = (int *)calloc(LMS_size+1,sizeof(int));
+    if(new_sa == NULL) {res[0] = -1; return;}
+
+    if(rank+1 == LMS_size){
+        for(int i=0;i<LMS_size;i++) new_sa[i] = orderedLMS[i];
     }else{
-        lms_suffix_array = induced_sort(rec_sa,(int)rec_sa.size()+1);
-        for(int i=0;i<lms_suffix_array.size();i++) lms_suffix_array[i] = lms_index[lms_suffix_array[i]];
-    }
+        new_str[LMS_size] = 0;
+        sa_is(LMS_size+1,new_sa,new_str,rank+2);
+        if(new_sa[0]==-1){res[0] = -1; return;}
 
-    fill(sa.begin(),sa.end(),-1);
-    for(int i=0;i<=alphabet_size;i++) current_idx[i] = ed[i];
-    reverse(lms_suffix_array.begin(),lms_suffix_array.end());
-
-    for(int i:lms_suffix_array){ // lms index -> insert
-        int now_alphabet = s[i];
-        sa[--current_idx[now_alphabet]] = i;
-    }
-
-    for(int i=0;i<=alphabet_size;i++) current_idx[i] = st[i];
-    for(int i=0;i<=n;i++){
-        if(sa[i] == -1 || sa[i] == 0) continue;
-        if(t[sa[i] - 1] == 1){
-            int now_alphabet = s[sa[i]-1];
-            sa[current_idx[now_alphabet]++] = sa[i]-1;
+        for(int i=0;i<LMS_size;i++){
+            new_sa[i] = LMS[new_sa[i+1]];
         }
     }
 
-    for(int i=0;i<=alphabet_size;i++) current_idx[i] = ed[i];
-    for(int i=n;i>=0;i--){
-        if(sa[i] == -1 || sa[i] == 0) continue;
-        if(t[sa[i]-1] == 0){
-            int now_alphabet = s[sa[i]-1];
-            sa[--current_idx[now_alphabet]] = sa[i]-1;
-        }
-    }
+    free(orderedLMS);
+    free(new_str);
 
-    vector<int> res(n);
-    for(int i=0;i<n;i++) res[i] = sa[i+1];
-    return res;
+    induced_sort(n,res,str,LMS_size,new_sa,T,char_size);
+    free(T);
+    free(LMS);
+    free(new_sa);
+    return;
 }
 
-vector<int> SA_IS(string str){
-    vector<int> s((int)str.size(),0);
-    for(int i=0;i<(int)str.size();i++) s[i] = str[i]-'a'+1;
-    return induced_sort(s);
-}
-
-vector<int> lcp_construction(vector<int> s,vector<int> sa){
-    int n = (int)s.size();
-    vector<int> rank(n),lcp(n);
-    rep(i,n) rank[sa[i]] = i;
-
+void lcp_construction(int n,int* s,int* sa,int* lcp){
+    int* rank = (int *)malloc(sizeof(int) * n);
+    for(int i=0;i<n;i++) rank[sa[i+1]] = i;
+ 
     int h = 0;
     lcp[0] = h;
     for(int i=0;i<n;i++){
         if(rank[i] == n-1) lcp[rank[i]] = 0;
         else{
-            int j = sa[rank[i]+1];
+            int j = sa[rank[i]+1+1];
             if(h>0) --h;
             while(i+h<n&&j+h<n){
                 if(s[i+h]!=s[j+h]) break;
@@ -165,23 +157,23 @@ vector<int> lcp_construction(vector<int> s,vector<int> sa){
             lcp[rank[i]] = h;
         }
     }
-
-    return lcp;
+    return;
 }
 
 
+
 int main(){
-    string str;
-    cin >> str;
-    int n = str.size();
-    vector<int> s(n);
-    rep(i,n) s[i] = str[i]-'a'+1;
-    vector<int> sa = SA_IS(str);
-    vector<int> lcp = lcp_construction(s,sa);
-    ll ans = (ll)n*((ll)n+1)/2;
-    rep(i,n){
-        ans -= lcp[i];
-    }
-    cout << ans << endl;
+    scanf("%s",s);
+    int n = 0;
+    while(s[n] != '\0') n++;
+    s[n++] = 0;
+    for(int i=0;i<n;i++) s_[i] = s[i];
+
+    sa_is(n,ans,s_,128);
+    --n;
+    lcp_construction(n,s_,ans,lcp);
+    long long res = (long long)(n)*(n+1)/2;
+    for(int i=0;i<n;i++) res -= lcp[i];
+    printf("%lld\n",res);
     return 0;
 }

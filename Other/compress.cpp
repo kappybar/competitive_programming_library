@@ -26,17 +26,20 @@ vector<T> compress(vector<T> &a){
 template<typename T>
 vector<T> compress(vector<T> &p1,vector<T> &p2){
     vector<T> vals;
-    int n = (int)p1.size();
-    for(int i=0;i<n;i++){
+    for(int i=0;i<(int)p1.size();i++){
         vals.push_back(p1[i]);
         vals.push_back(p1[i]+1);
+    }
+    for(int i=0;i<(int)p2.size();i++){
         vals.push_back(p2[i]);
         vals.push_back(p2[i]+1);
     }
     sort(vals.begin(),vals.end());
     vals.erase(unique(vals.begin(),vals.end()),vals.end());
-    for(int i=0;i<n;i++){
+    for(int i=0;i<(int)p1.size();i++){
         p1[i] = lower_bound(vals.begin(),vals.end(),p1[i]) - vals.begin();
+    }
+    for(int i=0;i<(int)p2.size();i++){
         p2[i] = lower_bound(vals.begin(),vals.end(),p2[i]) - vals.begin();
     }
     return vals;

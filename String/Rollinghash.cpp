@@ -1,71 +1,100 @@
 #include <bits/stdc++.h>
 #define rep(i,n) for(int i=0;i<(int)(n);i++)
+#define chmin(x,y) x = min((x),(y));
+#define chmax(x,y) x = max((x),(y));
 using namespace std;
 using ll = long long ;
 using P = pair<int,int> ;
 using pll = pair<long long,long long>;
-constexpr int INF = 1e9;
-constexpr long long LINF = 1e17;
-constexpr int MOD = 1000000007;
-constexpr double PI = 3.14159265358979323846;
+const int INF = 1e9;
+const long long LINF = 1e17;
+const int MOD = 1000000007;
+//const int MOD = 998244353;
+const double PI = 3.14159265358979323846;
 
 struct Rollinghash{
-    string S;
+    using bigint = __int128;
     int n;
-    vector<unsigned long long int> powb1;
-    vector<unsigned long long int> powb2;
-    vector<unsigned long long int> H1;
-    vector<unsigned long long int> H2;
-    const unsigned long long int B1 = 1000007;
-    const unsigned long long int B2 = 1000009;
-    const unsigned long long int M1 = 1000000007;
-    const unsigned long long int M2 = 1000000009;
-
-    Rollinghash(string S):S(S){
-        n=(int)(S.size());
-        H1.resize(n+1);
-        H2.resize(n+1);
-        powb1.resize(n+1);
-        powb2.resize(n+1);
+    const bigint m = (1LL<<61)-1; //mod
+    const bigint b = 1000000007;  //base ここはほ本当は乱択じゃないといけない
+    vector<bigint> s;             //もともとの文字列(数列)
+    vector<bigint> h;             //累積
+    vector<bigint> pow_mod;       // pow_mod[i] = m^i
+    Rollinghash(const string& str){      //文字列
+        n = (int)str.size();
+        s.resize(n);
+        for(int i=0;i<n;i++) s[i] = str[i];
         init();
     }
+    Rollinghash(const vector<int>& v){  //数列
+        n = (int)v.size();
+        s.resize(n);
+        for(int i=0;i<n;i++) s[i] = v[i];
+        init();
+    }
+    bigint mul(bigint a,bigint b){
+        bigint c = a * b;
+        c = (c >> 61) + (c & m);
+        if(c >= m) c-= m;
+        return c;
+    }
     void init(){
-        unsigned long long int p1 = 1;
-        unsigned long long int p2 = 1;
-        powb1[0] = p1;
-        powb2[0] = p2;
-        H1[0] = 0;
-        H2[0] = 0;
+        h.resize(n+1);
+        h[0] = 0;
+        pow_mod.resize(n+1);
+        pow_mod[0] = 1;
         for(int i=1;i<=n;i++){
-            powb1[i] = (powb1[i-1]*B1)%M1;
-            powb2[i] = (powb2[i-1]*B2)%M2;
+            pow_mod[i] = mul( pow_mod[i-1],b ) ;
         }
         for(int i=1;i<=n;i++){
-            H1[i] = (H1[i-1]*B1 + S[i-1])%M1;
-            H2[i] = (H2[i-1]*B2 + S[i-1])%M2;
+            h[i] = mul(h[i-1],b) + s[i-1];
+            if(h[i] >= m) h[i] -= m;
         }
     }
     //[l,r)
-    pair<unsigned long long int,unsigned long long int> hash(const int& l,const int& r){ 
-        return make_pair( (H1[r] - (H1[l] * powb1[r-l])%M1 + M1)%M1,(H2[r] - (H2[l] * powb2[r-l])%M2 + M2)%M2 );
+    long long hash(const int& l,const int& r){ 
+        long long res = (long long)h[r];
+        res -= mul(h[l], pow_mod[r-l]);
+        res = (res + m) % m;
+        return res;
     }
 }; 
 
 int main(){
-    string T,P;
-    cin >> T >> P;
-    if((int)(T.size()) < (int)(P.size())){
-        return 0;
+    int n;
+    cin >> n;
+    vector<int> a(2*n);
+    vector<int> b(n);
+    rep(i,n) cin >> a[i];
+    rep(i,n) cin >> b[i];
+    vector<int> ok(n,1);
+    for(int k=0;k<30;k++){
+        vector<int> a_(2*n);
+        vector<int> b_(n);
+        vector<int> b_rev(n);
+        rep(i,n){
+            a_[i] = (a[i]>>k)&1;
+            a_[i+n] = a_[i];
+            b_[i] = (b[i]>>k)&1;
+            b_rev[i] = !b_[i];
+        }
+        Rollinghash ra(a_),rb(b_),rb_rev(b_rev);
+        ll hash_b = rb.hash(0,n);
+        ll hash_b_rev = rb_rev.hash(0,n);
+        rep(i,n){
+            if(ok[i]==0) continue;
+            ll h = ra.hash(i,i+n);
+            if(h != hash_b && h != hash_b_rev) ok[i] = 0;
+        }
     }
 
-    Rollinghash Rt(T),Rp(P);
-    int m = P.size();
-
-    for(int i=0;i<T.size();i++){
-        if(Rt.hash(i,i+m)==Rp.hash(0,m)){
-            cout << i << endl;
+    rep(i,n){
+        if(ok[i]==1){
+            cout << i << " ";
+            cout << (b[0]^a[i]) << endl;
         }
     }
 
     return 0;
 }
+

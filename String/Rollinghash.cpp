@@ -19,7 +19,7 @@ struct Rollinghash{
     const bigint b = 1000000007;  //base ここはほ本当は乱択じゃないといけない
     vector<bigint> s;             //もともとの文字列(数列)
     vector<bigint> h;             //累積
-    vector<bigint> pow_mod;       // pow_mod[i] = m^i
+    vector<bigint> pow_base;       // pow_base[i] = b^i
     Rollinghash(const string& str){      //文字列
         n = (int)str.size();
         s.resize(n);
@@ -41,10 +41,10 @@ struct Rollinghash{
     void init(){
         h.resize(n+1);
         h[0] = 0;
-        pow_mod.resize(n+1);
-        pow_mod[0] = 1;
+        pow_base.resize(n+1);
+        pow_base[0] = 1;
         for(int i=1;i<=n;i++){
-            pow_mod[i] = mul( pow_mod[i-1],b ) ;
+            pow_base[i] = mul( pow_base[i-1],b ) ;
         }
         for(int i=1;i<=n;i++){
             h[i] = mul(h[i-1],b) + s[i-1];
@@ -54,7 +54,7 @@ struct Rollinghash{
     //[l,r)
     long long hash(const int& l,const int& r){ 
         long long res = (long long)h[r];
-        res -= mul(h[l], pow_mod[r-l]);
+        res -= mul(h[l], pow_base[r-l]);
         res = (res + m) % m;
         return res;
     }

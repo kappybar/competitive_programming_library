@@ -77,6 +77,24 @@ long long inverse(long long x){
     return modpow(x,MOD-2);
 }
 
+//eulerの関数
+// gcd(a,n) == 1で　a^k == 1 (mod n)になるk
+long long phi(long long n){
+    long long res = n;
+    for(long long i=2;i*i<=n;i++){
+        if(n%i==0){
+            res /= i;
+            res *= i-1;
+            while(n%i==0) n/=i;
+        }
+    }
+    if(n > 1){
+        res /= n;
+        res *= n-1;
+    }
+    return res;
+}
+
 //n ^ kをO(k)で計算する。
 long long  power(int n,int k){
     long long res = 1;

@@ -85,6 +85,30 @@ vector<T> Lagrange_interpolation(vector<T> x,vector<T> y){
 }
 
 //ラグランジュ補間
+// f(x[i]) = y[i]のとき
+// f(k)を求める。
+// O(n^2)
+template<typename T>
+T Lagrange(vector<T> x,vector<T> y,T k){
+    int n = (int)x.size();
+    vector<T> c(n,1);
+    for(int i=0;i<n;i++){
+        for(int j=0;j<n;j++){
+            if(i==j) continue;
+            c[i] *= (x[i]-x[j]);
+        }
+        c[i] = y[i] / c[i];
+    }
+    vector<T> L(n+1),R(n+1);
+    L[0] = R[n] = 1;
+    for(int i=0;i<n;i++) L[i+1] = L[i] * (k-x[i]);
+    for(int i=n-1;i>=0;i--) R[i] = R[i+1] * (k-x[i]);
+    T res = 0;
+    for(int i=0;i<n;i++) res += c[i] * L[i] * R[i+1];
+    return res;
+}
+
+//ラグランジュ補間
 // f(x) = y[0], f(x+d) = y[1],f(x+2*d)= y[2],...f(x+(n-1)*d) = y[n-1]のとき
 // f(k)を求める。
 // O(n)

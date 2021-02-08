@@ -14,10 +14,11 @@ const int MOD = 1000000007;
 template<int char_size,int base>
 struct Trie{
     struct Node{
+        int par;              //親の頂点番号
         vector<int> children; //子の頂点番号、存在しないなら-1
         vector<int> accept;   //末端がこの頂点になる語の番号
         int c;                //文字
-        Node(int c):c(c){
+        Node(int par,int c):par(par),c(c){
             children.assign(char_size,-1);
         }
     };
@@ -27,7 +28,7 @@ struct Trie{
     int sum;
 
     Trie():root(0),sum(0){
-        trie.push_back(Node(-1)); // 空文字
+        trie.push_back(Node(-1,-1)); // 空文字
     }
 
     //文字列挿入
@@ -38,7 +39,7 @@ struct Trie{
             int &nxt = trie[node].children[c];
             if(nxt == -1){
                 nxt = (int)trie.size();
-                trie.push_back(Node(c));
+                trie.push_back(Node(node,c));
                 node = nxt;
             }else{
                 node = nxt;
@@ -82,34 +83,27 @@ int main(){
         tr.insert(s);
     }
     int v = tr.count_vertex();
-
     ll ans = 0;
-    vector<vector<int>> dp(v,vector<int>(26,-1));
-    vector<int> cnt(v,-1);
-    auto dfs = [&](auto&& dfs,int i) -> void{
-        if(dp[i][0] != -1) return;
-        vector<int> tmp(26,0);
-        cnt[i] = 0;
-        rep(j,26) dp[i][j] = 0;
-        for(int j=0;j<26;j++){
-            if(tr[i].children[j] == -1) continue;
-            int vv = tr[i].children[j];
-            dfs(dfs,vv);
-            rep(k,26) dp[i][k] += dp[vv][k];
-            cnt[i] += cnt[vv];
+    vector<int> ind;
 
-            tmp[tr[vv].c] += tr[vv].accept.size();
+    rep(i,v){
+        if((int)tr[i].accept.size() > 0) ind.push_back(i);
+    }
+
+    rep(i,n){
+        set<int> suffix;
+        int idx = ind[i];
+        while(idx >= 0){
+            rep(i,26){
+                if(suffix.count(i) == 0) continue;
+                int vv = tr[idx].children[i];
+                if(vv == -1) continue;
+                if((int)tr[vv].accept.size() > 0) ans ++;
+            }
+            suffix.insert(tr[idx].c);
+            idx = tr[idx].par;
         }
-        rep(j,26){
-            if(tmp[j] == 1) ans += dp[i][j]-1;
-        }
-        if((int)tr[i].accept.size() > 0) ++cnt[i];
-        if(tr[i].c != -1){
-            dp[i][tr[i].c] += cnt[i] - dp[i][tr[i].c];
-        }
-        return;
-    };
-    dfs(dfs,0);
-    cout << ans << endl;
+    }
+    cout << ans-(ll)n << endl;
     return 0;
 }

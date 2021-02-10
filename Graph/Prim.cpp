@@ -1,44 +1,61 @@
 #include <bits/stdc++.h>
-#define rep(i,n) for(int i=0;i<n;i++)
+#define rep(i,n) for(int i=0;i<(int)(n);i++)
+#define chmin(x,y) x = min((x),(y));
+#define chmax(x,y) x = max((x),(y));
 using namespace std;
-using ll =  long long ;
+using ll = long long ;
 using P = pair<int,int> ;
+using pll = pair<long long,long long>;
 const int INF = 1e9;
+const long long LINF = 1e17;
 const int MOD = 1000000007;
-int v = 10005,e = 100005;
-vector<vector<P>> graph(v,vector<P>());
-vector<bool> has_connected(v,false);
+//const int MOD = 998244353;
+const double PI = 3.14159265358979323846;
 
-int prim(){
-    int res = 0;
-    priority_queue<P,vector<P>,greater<P>> pq;
-    pq.push(P(0,0));
-    while(!pq.empty()){
-        P now = pq.top();
-        pq.pop();
-        int c,k;
-        tie(c,k) = now;
-        if(has_connected[k]) continue;
-        res += c;
-        has_connected[k] = true;
-        for(P next:graph[k]){
-            if(has_connected[next.second]) continue;
-            pq.push(next);
-        }
+template<typename T>
+struct Prim_graph{
+    using pp = pair<T,int>;
+    int n;
+    vector<vector<pp>> G;
+    Prim_graph(int n):n(n){
+        G.resize(n);
     }
-    return res;
-}
+    //無向
+    void add_edge(int a,int b,T w){
+        G[a].push_back(pp{w,b});
+        G[b].push_back(pp{w,a});
+    }
+    T prim(int s = 0){
+        vector<int> has_connected(n,-1);
+        T res = 0;
+        priority_queue<pp,vector<pp>,greater<pp>> pq;
+        pq.push(P(0,s));
+        while(!pq.empty()){
+            T d = pq.top().first;
+            int v = pq.top().second;
+            pq.pop();
+            if(has_connected[v] != -1) continue;
+            has_connected[v] = 1;
+            res += d;
+            for(auto next:G[v]){
+                if(has_connected[next.second] != -1) continue;
+                pq.push(next);
+            }
+        }
+        return res;
+    }
+};
 
 int main(){
-    cin >> v >> e;
-    rep(i,e){
-        int s,t,w;
-        cin >> s >> t >> w;
-        graph[s].push_back(P(w,t));
-        graph[t].push_back(P(w,s));
+    int n,m;
+    cin >> n >> m;
+    Prim_graph<ll> G(n);
+    rep(i,m){
+        int a,b,r;
+        cin >> a >> b >> r;
+        G.add_edge(a,b,r);
     }
-
-    int cost = prim();
+    int cost = G.prim();
     cout << cost << endl;
     return 0;
 }

@@ -20,6 +20,8 @@ template<int mod> struct ModInt{
     constexpr ModInt& operator-=(const ModInt& r){ if((x-=r.x)<0) x+=mod; return *this;}
     constexpr ModInt& operator*=(const ModInt& r){ if((x*=r.x)>=mod) x%=mod; return *this;}
     constexpr ModInt& operator/=(const ModInt& r){ return *this*=r.inv();}
+    constexpr bool operator==(const ModInt& r){ return x == r.x;}
+    constexpr bool operator!=(const ModInt& r){ return x != r.x;}
     ModInt inv() const {
         long long s=x,sx=1,sy=0,t=mod,tx=0,ty=1;
         while(s%t!=0){

@@ -13,7 +13,7 @@ const int MOD = 1000000007;
 const double PI = 3.14159265358979323846;
 
 
-//有効グラフの接続行列 Bについて 
+//有向グラフの接続行列 Bについて 
 //方程式 Bx = c を解く。
 template<typename T>
 struct Incidence_matrix{

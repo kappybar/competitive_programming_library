@@ -61,11 +61,11 @@ long long PER_small_k(ll n,ll k){
 }
 
 /*繰り返し二乗法*/
-long long modpow(long long x, long long n) {
+long long modpow(long long x, long long n,long long m) {
     long long ret = 1;
     while (n > 0) {
-        if (n & 1) ret = (ret * x) % MOD;  
-        x = (x * x) % MOD;
+        if (n & 1) ret = (ret * x) % m;  
+        x = (x * x) % m;
         n >>= 1;  
     }
     return ret;
@@ -74,7 +74,7 @@ long long modpow(long long x, long long n) {
 
 /*繰り返し二乗法でxのmod逆元を取る*/
 long long inverse(long long x){
-    return modpow(x,MOD-2);
+    return modpow(x,MOD-2,MOD);
 }
 
 //eulerの関数
@@ -107,7 +107,7 @@ int main(){
     COMinit();
     int n,a,b;
     cin >> n >> a >> b;
-    ll res = (modpow(2,n) - 1 + MOD) % MOD;
+    ll res = (modpow(2,n,10) - 1 + MOD) % MOD;
     res = (res - COM_small_k(n,a) + MOD) % MOD;
     res = (res - COM_small_k(n,b) + MOD) % MOD;
     cout << res << endl;

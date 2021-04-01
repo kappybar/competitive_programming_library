@@ -16,6 +16,7 @@ struct scc_graph{
     vector<vector<int>> revgraph;
     vector<int> postorder;
     vector<int> seen;
+    vector<vector<int>> graph_dag;//scc後のgraph
 
     scc_graph(int n):n(n),graph(n),revgraph(n),seen(n,-1){}
 
@@ -24,7 +25,7 @@ struct scc_graph{
         revgraph[to].push_back(from);
     }
 
-    vector<vector<int>> scc(){
+    vector<vector<int>> scc(bool make_graph_dag = false){
         fill(seen.begin(),seen.end(),-1);
         for(int i=0;i<n;i++){
             if(seen[i]<0) dfs(i);
@@ -39,6 +40,22 @@ struct scc_graph{
         vector<vector<int>> scc_groups(k);
         for(int i=0;i<n;i++){
             scc_groups[seen[i]].push_back(i);
+        }
+
+        if(make_graph_dag){
+            graph_dag.resize(k);
+            for(int i=0;i<n;i++){
+                for(int j:graph[i]){
+                    int new_i = seen[i];
+                    int new_j = seen[j];
+                    if(new_i == new_j) continue;
+                    graph_dag[new_i].push_back(new_j);
+                }
+            }
+            for(int i=0;i<k;i++){
+                sort(graph_dag[i].begin(),graph_dag[i].end());
+                graph_dag[i].erase(unique(graph_dag[i].begin(),graph_dag[i].end()),graph_dag[i].end());
+            }
         }
 
         return scc_groups;

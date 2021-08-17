@@ -17,7 +17,7 @@ struct Sieve {
     int n;
     vector<int> f,primes,mobius;
     
-    Sieve(int n=1):n(n),f(n+1),mobius(n+1){
+    Sieve(int n=1):n(n),f(n+1),mobius(n+1,1){
         f[0] = f[1] = -1;
         mobius[1] = 1;
         primes.reserve(n);

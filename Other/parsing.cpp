@@ -1,101 +1,86 @@
 #include <bits/stdc++.h>
-#define rep(i,n) for(int i=0;i<(int)(n);i++)
-#define chmin(x,y) x = min((x),(y));
-#define chmax(x,y) x = max((x),(y));
-using namespace std;
-using ll = long long ;
-using P = pair<int,int> ;
-using pll = pair<long long,long long>;
-const int INF = 1e9;
-const long long LINF = 1e17;
-const int MOD = 1000000007;
-//const int MOD = 998244353;
-const double PI = 3.14159265358979323846;
 
-//ライブラリではない
-//構文解析
 
-using State = string::const_iterator;
-int number(State &begin); //数
-int factor(State &begin); //() or 数
-int term(State &begin);   //* or /
-int expression(State &begin); //四則演算
+// basic parsing
 
-//数
-int number(State &begin) {
-	int res = 0;
-
-	while(isdigit(*begin)) {
-		res *= 10;
-		res += *begin - '0';
-		begin++;
-	}
-
-	return res;
+// true   if s[i++] == c
+// false  otherwise
+bool consume(const std::string &s, int &i, char c) {
+    if (s[i] != c) return false;
+    i++;
+    return true;
 }
 
-// () or 数
-int factor(State &begin) {
-	if(*begin == '(') {
-		begin ++;
-		int res = expression(begin);
-		begin ++;
-		return res;
-	} else {
-		return number(begin);
-	}
+void expect(const std::string &s, int &i, char c) {
+    assert(s[i] == c);
+    i++;
+    return; 
 }
 
-// * or /
-int term(State &begin) {
-	int res = factor(begin);
-	
-	while(1){
-		if(*begin == '*'){
-			begin ++;
-			res *= factor(begin);
-		}else if(*begin == '/'){
-			begin ++;
-			res /= factor(begin);
-		} else {
-			break;
-		}
-	}
+int number(const std::string &s, int &i);
+int factor(const std::string &s, int &i); 
+int mul(const std::string &s, int &i);   
+int expr(const std::string &s, int &i);
 
-	return res;
+
+// number = [0 - 9]*
+int number(const std::string &s, int &i) {
+    int res = 0;
+
+    while (isdigit(s[i])) {
+        res = 10 * res + (s[i] - '0');
+        i++;
+    }
+
+    return res;
 }
 
-// + or -
-int expression(State &begin) {
-	int res = term(begin);
-
-	while(1){
-		if(*begin == '+') {
-			begin ++;
-			res += term(begin);
-		}else if(*begin == '-') {
-			begin ++;
-			res -= term(begin);
-		} else {
-			break;
-		}
-	}
-
-	return res;
+// factor = "(" expr ")" | number
+int factor(const std::string &s, int &i) {
+    if (consume(s, i, '(')) {
+        int res = expr(s, i);
+        expect(s, i, ')');
+        return res;
+    }
+    return number(s, i);
 }
 
 
-int main(){
-	int n;
-	cin >> n;
-	cin.ignore();
+// mul = factor ("*" factor | "/" factor )* 
+int mul(const std::string &s, int &i) {
+    int res = factor(s, i);
 
-	while(n--){
-		string s;
-		getline(cin,s);
+    while (1) {
+        if (consume(s, i, '*')) {
+            res *= factor(s, i);
+            continue;
+        } 
+        if (consume(s, i, '/')) {
+            res /= factor(s, i);
+            continue;
+        } 
+        break;
+    }
 
-		State tmp = s.begin();
-		cout << expression(tmp) << endl; 
-	}
-	return 0;
+    return res;
 }
+
+// expr = mul ("+" mul | "-" mul)* 
+int expr(const std::string &s, int &i) {
+    int res = mul(s, i);
+
+    while (1) {
+        if (consume(s, i, '+')) {
+            res += mul(s, i);
+            continue;
+        } 
+        if (consume(s, i, '-')) {
+            res -= mul(s, i);
+            continue;
+        } 
+        break;
+    }
+
+    return res;
+}
+

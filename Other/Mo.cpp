@@ -1,67 +1,57 @@
 #include <bits/stdc++.h>
-#define rep(i,n) for(int i=0;i<(int)(n);i++)
-using namespace std;
-using ll = long long ;
-using P = pair<int,int> ;
-using pll = pair<long long,long long>;
-constexpr int INF = 1e9;
-constexpr long long LINF = 1e17;
-constexpr int MOD = 1000000007;
-constexpr double PI = 3.14159265358979323846;
 
 // Mo algorithm 
-// change add function and del function
 
-int main(){
-    int n;
-    scanf("%d",&n);
-    int q;
-    scanf("%d",&q);
-    vector<int> c(n);
-    rep(i,n) scanf("%d",&c[i]),--c[i];
-    vector<int> l(q),r(q);
-    rep(i,q){
-        scanf("%d %d",&l[i],&r[i]);
-        --l[i];
+// T ans;
+// void add(int i);
+// void del(int i);
+
+template<typename T, void (*add)(int), void (*del)(int)>
+struct Mo {
+private:
+    int n, q;
+    std::vector<int> l, r;
+
+public:
+    Mo(int n):n(n), q(0) {
+        l.reserve(n);
+        r.reserve(n);
     }
 
-    int sq = sqrt(n);
-    vector<int> qi(q,0);
-    for(int i=0;i<q;i++) qi[i] = i;
-    sort(qi.begin(),qi.end(),[&](const int &i,const int &j){
-        if(l[i] / sq != l[j] / sq) return l[i] < l[j];
-        if((l[i] / sq)%2 == 1) return r[i] > r[j];
-        return r[i] < r[j];
-    });
-
-    vector<int> cnt(n,0);
-    int ans = 0;
-
-    auto add = [&](int id){
-        //if(id<0 ||id>=n) return;
-        if(cnt[c[id]]==0) ++ans;
-        ++cnt[c[id]];
-    };
-
-    auto del = [&](int id){
-        //if(id<0 ||id>=n) return;
-        if(cnt[c[id]]==1) --ans;
-        --cnt[c[id]];
-    };
-
-    
-    vector<int> queryans(q);
-    int nl = 0,nr = 0;
-    for(int i:qi){
-        //cout << nl << " " << nr  << endl;
-        while(nl > l[i]) --nl,add(nl);
-        while(nr < r[i]) add(nr),++nr;
-        while(nl < l[i]) del(nl),++nl;
-        while(nr > r[i]) --nr,del(nr);
-
-        queryans[i] = ans;
+    // [left, right)
+    void add_query(int left, int right) {
+        q++;
+        l.push_back(left);
+        r.push_back(right);
+        return;
     }
 
-    rep(i,q) printf("%d\n",queryans[i]);
-    return 0;
-}
+    std::vector<T> answer(void) {
+        int sq = std::sqrt(n);
+
+        std::vector<int> qi(q, 0);
+        std::iota(qi.begin(), qi.end(), 0);
+        std::vector<int> lblock(q);
+        for (int i = 0;i < q; i++) lblock[i] = l[i] / sq;
+        sort(qi.begin(), qi.end(), [&](const int &i, const int &j) {
+            if (lblock[i] != lblock[j]) return l[i] < l[j];
+            if (lblock[i] % 2 == 1) return r[i] > r[j];
+            return r[i] < r[j];
+        });
+
+        std::vector<T> queryans(q);
+        int nl = 0, nr = 0;
+        for(int i : qi) {
+            while(nl > l[i]) add(--nl);
+            while(nr < r[i]) add(nr++);
+            while(nl < l[i]) del(nl++);
+            while(nr > r[i]) del(--nr);
+
+            queryans[i] = ans;
+        }
+
+        return queryans;
+    } 
+
+};
+

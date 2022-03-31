@@ -6,11 +6,11 @@ private:
     struct Node {
         S value, acc;
         F lazy;
-        int priority, cnt;
+        int priority, cnt, rev;
         std::unique_ptr<Node> lhs, rhs;
 
-        Node(S value, S acc, F lazy, int priority, int cnt=1, std::unique_ptr<Node> lhs = nullptr, std::unique_ptr<Node> rhs = nullptr) 
-            :value(value), acc(acc), lazy(lazy), priority(priority), cnt(cnt), lhs(std::move(lhs)), rhs(std::move(rhs)) {}
+        Node(S value, S acc, F lazy, int priority, int cnt=1, int rev=0, std::unique_ptr<Node> lhs = nullptr, std::unique_ptr<Node> rhs = nullptr) 
+            :value(value), acc(acc), lazy(lazy), priority(priority), cnt(cnt), rev(rev), lhs(std::move(lhs)), rhs(std::move(rhs)) {}
     };
     std::unique_ptr<Node> root;
     std::random_device seed_gen;
@@ -42,6 +42,12 @@ private:
 
     void propagate(std::unique_ptr<Node> &node) {
         if (node) {
+            if (node->rev) {
+                node->rev = 0;
+                node->lhs.swap(node->rhs);
+                if (node->lhs) node->lhs->rev ^= 1;
+                if (node->rhs) node->rhs->rev ^= 1;
+            }
             if (node->lazy == id()) return;
             if (node->lhs) {
                 node->lhs->lazy = composition(node->lhs->lazy, node->lazy);
@@ -119,6 +125,20 @@ private:
         return;
     }
 
+    //    a[l], ..., a[r-1]
+    // -> a[r-1], ..., a[l]
+    void reverse(std::unique_ptr<Node> &node, int l, int r) {
+        std::unique_ptr<Node> node1 = nullptr, node2 = nullptr, node3 = nullptr;
+        split(std::move(node), l, node1, node2);
+        split(std::move(node2), r - l, node2, node3);
+
+        node2->rev ^= 1;
+
+        merge(node, std::move(node1), std::move(node2));
+        merge(node, std::move(node), std::move(node3));
+        return;
+    }
+
     // insert item to index key
     void insert(std::unique_ptr<Node> &node, int key, std::unique_ptr<Node> item) {
         std::unique_ptr<Node> node1 = nullptr, node2 = nullptr;
@@ -139,7 +159,7 @@ private:
 
     // i \in [l, r) node[i] = mapping(f, node[i])
     void apply(std::unique_ptr<Node> &node, int l, int r, F f) {
-        std::unique_ptr<Node> node1, node2, node3;
+        std::unique_ptr<Node> node1 = nullptr, node2 = nullptr, node3 = nullptr;
         split(std::move(node), l, node1, node2);
         split(std::move(node2), r - l, node2, node3);
 
@@ -153,7 +173,7 @@ private:
 
     // op(a[l], a[l+1], ... , a[r-1])
     S query(std::unique_ptr<Node> &node, int l, int r) {
-        std::unique_ptr<Node> node1, node2, node3;
+        std::unique_ptr<Node> node1 = nullptr, node2 = nullptr, node3 = nullptr;
         split(std::move(node), l, node1, node2);
         split(std::move(node2), r - l, node2, node3);
 
@@ -199,45 +219,52 @@ public:
     
     // insert value to index key
     void insert(int key, S value) {
-        assert(key <= get_cnt(root));
+        assert(key <= size());
         std::unique_ptr<Node> item = std::make_unique<Node>(value, value, id(), rnd());
         insert(root, key, std::move(item));
     }
 
     // erase a[key]
     void erase(int key) {
-        assert(key < get_cnt(root));
+        assert(key < size());
         erase(root, key);
     }
 
     //    a[l], ..., a[m], ..., a[r-1]
     // -> a[m], ..., a[r-1], a[l], ... 
     void rotate(int l, int m, int r) {
-        assert(0 <= l && l <= m && m < r && r <= get_cnt(root));
+        assert(0 <= l && l <= m && m < r && r <= size());
         rotate(root, l, m, r);
+    }
+
+    //    a[l], ..., a[r-1]
+    // -> a[r-1], ..., a[l]
+    void reverse(int l, int r) {
+        assert(0 <= l && l < r && r <= size());
+        reverse(root, l, r);
     }
 
     // i \in [l, r) a[i] = mapping(f, a[i])
     void apply(int l, int r, F f) {
-        assert(0 <= l && l < r && r <= get_cnt(root));
+        assert(0 <= l && l < r && r <= size());
         apply(root, l, r, f);
     }
 
     // op(a[l], a[l+1], ..., a[r-1])
     S query(int l, int r) {
-        assert(0 <= l && l < r && r <= get_cnt(root));
+        assert(0 <= l && l < r && r <= size());
         return query(root, l, r);
     }
 
     // a[key]
     S get(int key) {
-        assert(key < get_cnt(root));
+        assert(key < size());
         return query(root, key, key + 1);
     }
 
     // a[key] = value
     void set(int key, S value) {
-        assert(key < get_cnt(root));
+        assert(key < size());
         set(root, key, value);
     }
 
